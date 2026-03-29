@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Scrabble Tournament Timer V2</title>
+
+<style>
+
+body{
+font-family:monospace;
+margin:0;
+text-align:center;
+transition:0.3s;
+}
+
+body.dark{
+background:#0f172a;
+color:white;
+}
+
+body.light{
+background:#f5f5f5;
+color:black;
+}
+
+.theme{
+position:absolute;
+top:10px;
+right:20px;
+font-size:28px;
+cursor:pointer;
+}
+
+/* paddles */
+
+.paddles{
+display:flex;
+width:100%;
+}
+
+.paddle{
+width:50%;
+height:80px;
+border:none;
+font-size:22px;
+cursor:pointer;
+}
+
+.paddle1{
+background:#2563eb;
+color:white;
+}
+
+.paddle2{
+background:#dc2626;
+color:white;
+}
+
+/* player panels */
+
+.container{
+display:flex;
+justify-content:space-between;
+margin-top:30px;
+}
+
+.player{
+width:48%;
+padding:30px;
+border-radius:10px;
+}
+
+/* LED digital display */
+
+.time{
+font-size:90px;
+letter-spacing:6px;
+font-family:'Courier New',monospace;
+color:#00ff88;
+text-shadow:
+0 0 10px #00ff88,
+0 0 20px #00ff88,
+0 0 40px #00ff88;
+}
+
+.warning{
+color:red !important;
+text-shadow:
+0 0 10px red,
+0 0 20px red,
+0 0 40px red;
+}
+
+.active{
+box-shadow:0 0 30px yellow;
+}
+
+.controls{
+margin-top:15px;
+}
+
+button,select,input{
+padding:8px;
+margin:5px;
+font-size:15px;
+}
+
+.moves{
+font-size:18px;
+margin-top:10px;
+}
+
+</style>
+</head>
+
+<body class="dark">
+
+<div class="theme" onclick="toggleTheme()">🌙</div>
+
+<h1>Scrabble Tournament Timer V2</h1>
+
+<div class="controls">
+
+<select id="gameLength">
+<option value="300">5 Minutes</option>
+<option value="600">10 Minutes</option>
+<option value="900">15 Minutes</option>
+<option value="1500">25 Minutes (Tournament)</option>
+<option value="custom">Custom</option>
+</select>
+
+<div id="customTime" style="display:none">
+H <input id="h" type="number" value="0" min="0">
+M <input id="m" type="number" value="5" min="0">
+S <input id="s" type="number" value="0" min="0">
+</div>
+
+<br>
+
+<button onclick="startGame()">Start</button>
+<button onclick="pauseGame()">Pause</button>
+<button onclick="resetGame()">Reset</button>
+<button onclick="goFullscreen()">Fullscreen</button>
+
+</div>
+
+<!-- paddle buttons -->
+
+<div class="paddles">
+<button class="paddle paddle1" onclick="switchTurn(1)">PLAYER 1</button>
+<button class="paddle paddle2" onclick="switchTurn(2)">PLAYER 2</button>
+</div>
+
+<div class="container">
+
+<div class="player" id="player1">
+<h2>Player 1</h2>
+<div class="time" id="time1">05:00</div>
+<div class="moves">Moves: <span id="moves1">0</span></div>
+</div>
+
+<div class="player" id="player2">
+<h2>Player 2</h2>
+<div class="time" id="time2">05:00</div>
+<div class="moves">Moves: <span id="moves2">0</span></div>
+</div>
+
+</div>
+
+<script>
+
+let time1=300
+let time2=300
+
+let moves1=0
+let moves2=0
+
+let activePlayer=0
+let timer=null
+
+const t1=document.getElementById("time1")
+const t2=document.getElementById("time2")
+
+function format(t){
+
+let m=Math.floor(t/60)
+let s=t%60
+
+return String(m).padStart(2,'0')+":"+String(s).padStart(2,'0')
+
+}
+
+function updateDisplay(){
+
+t1.innerText=format(time1)
+t2.innerText=format(time2)
+
+document.getElementById("moves1").innerText=moves1
+document.getElementById("moves2").innerText=moves2
+
+if(time1<=30) t1.classList.add("warning")
+if(time2<=30) t2.classList.add("warning")
+
+}
+
+document.getElementById("gameLength").onchange=function(){
+
+if(this.value=="custom")
+document.getElementById("customTime").style.display="block"
+else
+document.getElementById("customTime").style.display="none"
+
+}
+
+function startGame(){
+
+let val=document.getElementById("gameLength").value
+
+if(val=="custom"){
+
+let h=parseInt(h.value)||0
+let m=parseInt(m.value)||0
+let s=parseInt(s.value)||0
+
+let total=h*3600+m*60+s
+
+time1=total
+time2=total
+
+}else{
+
+time1=parseInt(val)
+time2=parseInt(val)
+
+}
+
+moves1=0
+moves2=0
+
+activePlayer=1
+
+updateDisplay()
+
+timer=setInterval(runClock,1000)
+
+}
+
+function runClock(){
+
+if(activePlayer==1){
+
+time1--
+
+if(time1<=0){
+
+beep()
+alert("Player 1 time over")
+clearInterval(timer)
+
+}
+
+}
+
+else if(activePlayer==2){
+
+time2--
+
+if(time2<=0){
+
+beep()
+alert("Player 2 time over")
+clearInterval(timer)
+
+}
+
+}
+
+updateDisplay()
+
+}
+
+function switchTurn(player){
+
+if(activePlayer==0)return
+
+if(player==1 && activePlayer!=1){
+
+moves2++
+activePlayer=1
+
+}
+
+else if(player==2 && activePlayer!=2){
+
+moves1++
+activePlayer=2
+
+}
+
+updateDisplay()
+
+}
+
+function pauseGame(){
+
+clearInterval(timer)
+activePlayer=0
+
+}
+
+function resetGame(){
+
+clearInterval(timer)
+
+time1=300
+time2=300
+
+moves1=0
+moves2=0
+
+activePlayer=0
+
+updateDisplay()
+
+}
+
+function beep(){
+
+let audioCtx=new (window.AudioContext||window.webkitAudioContext)()
+
+let oscillator=audioCtx.createOscillator()
+
+oscillator.connect(audioCtx.destination)
+
+oscillator.start()
+
+setTimeout(()=>oscillator.stop(),500)
+
+}
+
+function toggleTheme(){
+
+if(document.body.classList.contains("dark")){
+
+document.body.classList.remove("dark")
+document.body.classList.add("light")
+document.querySelector(".theme").innerHTML="☀️"
+
+}else{
+
+document.body.classList.remove("light")
+document.body.classList.add("dark")
+document.querySelector(".theme").innerHTML="🌙"
+
+}
+
+}
+
+function goFullscreen(){
+
+if(!document.fullscreenElement)
+document.documentElement.requestFullscreen()
+
+}
+
+document.addEventListener("keydown",function(e){
+
+if(e.code==="Space"){
+
+e.preventDefault()
+
+if(activePlayer==1)
+switchTurn(2)
+else if(activePlayer==2)
+switchTurn(1)
+
+}
+
+})
+
+updateDisplay()
+
+</script>
+
+</body>
+</html>
